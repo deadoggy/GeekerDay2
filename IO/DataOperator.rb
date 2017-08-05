@@ -42,7 +42,7 @@ class DataOperator
   #获取list里面所有的记录
   def getList(ids)
     ret = []
-    ids.each do |id| ret += get(id) end
+    ids.each do |id| ret << get(id) end
     return ret
   end
 
@@ -56,6 +56,8 @@ class DataOperator
 
   #删除一个记录
   def delete(id)
+    #维护Index文件
+    maintainIndexTableFile
     delInfo = searchIndexRecordById(id)
     if delInfo.nil? then
       return false
@@ -72,6 +74,9 @@ class DataOperator
 
   #插入一个新的记录
   def insert(newContent)
+    #维护Index文件
+    maintainIndexTableFile
+    #插入
     newContent = ArrToString(newContent)
     len = newContent.bytesize
     #获取新的ID
@@ -179,7 +184,30 @@ class DataOperator
     end
     freeTable.close
   end
-  
+
+  #维护index表
+  def maintainIndexTableFile
+
+    fileSize = File.size($INDEX_DATA_FILE_NAME)
+    #如果大于600m
+    if fileSize > 600_000_000 then
+      oldIndexFile = File.new($INDEX_DATA_FILE_NAME, "w+")
+      newIndexFile = File.new("Backup_" + $INDEX_DATA_FILE_NAME, "a+")
+      (0...fileSize/$INDEX_WIDTH).each do |i|
+        #逐行定位旧文件的内容
+        oldIndexFile.seek(i * $INDEX_WIDTH)
+        line = oldIndexFile.gets
+        #如果该行不是空
+        if line != @mEmptyIndexRecord then
+          newIndexFile.write(line)
+        end
+      end
+      #删除旧文件， 改名新文件
+      File.delete($INDEX_DATA_FILE_NAME)
+      File.rename("Backup_" + $INDEX_DATA_FILE_NAME, $INDEX_DATA_FILE_NAME)
+    end
+
+  end
 
 end
 
@@ -194,5 +222,5 @@ new_id = op.insert(test_data)
 #再取出
 new_con = op.get(new_id)
 op.saveStatus
+puts new_con
 
-puts new_id
