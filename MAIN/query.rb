@@ -1,6 +1,5 @@
 #! /usr/bin/ruby -w
 #! -*- coding: utf-8 -*-
-require File.dirname(__FILE__) + '/test.rb'
 
 def getIdsUsingHash(key, val)
 	case key
@@ -51,10 +50,11 @@ def getKV(single_cond)
 	end
 end
 
-def getHashIdsByConds(s_conds, obj_HashOpt)
+def getHashIdsByConds(s_conds, obj_hash_opt)
 	if s_conds[0] != '('
 		return false, "条件符号错误：缺少("
 	elsif s_conds[-1] != ')'
+		puts "get：" + s_conds
 		return false, "条件符号错误：缺少)"
 	else
 		s_conds = s_conds[1,s_conds.length - 2]
@@ -95,7 +95,7 @@ def getHashIdsByConds(s_conds, obj_HashOpt)
 			end
 			pivot += 1
 		end
-		#ar_id = obj_HashOpt.getIdsUsingHash(ar_kv[0][0], ar_kv[0][1])
+		#ar_id = obj_hash_opt.getIdsUsingHash(ar_kv[0][0], ar_kv[0][1])
 		ar_id = getIdsUsingHash(ar_kv[0][0], ar_kv[0][1])
 		count = 1
 		ar_logic.each do |logic|
@@ -108,6 +108,54 @@ def getHashIdsByConds(s_conds, obj_HashOpt)
 		end 
 		return true, ar_id, ar_kv
 	end
+end
+
+
+def parseSetData(str)
+	if str[0] != '('
+		return false, "条件符号错误：缺少("
+	elsif str[-1] != ')'
+		puts "get：" + str
+		return false, "条件符号错误：缺少)"
+	else
+		str = str[1,str.length - 2]
+		ar_key = ['姓名','电话','邮箱','公司','部门','职位']
+		ar_kv = []
+		ar_conds = str.split(',')
+		ar_conds.each do |single_cond|
+			ar_ret = getKV(single_cond)
+			if ar_ret[0] == false
+	 			return ar_ret
+	 		end
+			if ar_key.include? ar_ret[1]
+				if ar_ret[1] == "电话" && !parsePhone(ar_ret[2])
+					return false, "电话格式错误"
+				end
+				if ar_ret[1] == "邮箱" && !parseEmail(ar_ret[2])
+					return false, "邮箱格式错误"
+				end 
+				ar_kv[ar_key.index(ar_ret[1]) + 1] = [ar_ret[2]]
+			else
+				return false, "无效的字段:" + ar_ret[1] 
+			end
+		end
+		return true, ar_kv
+	end
+end
+
+def resultCheck(item, ar_kv)
+	count = 0
+	result = true
+	item.each do |column|
+	 	if count != 0
+	 		 if column != ar_kv[item.index(column) - 1][1]
+	 		 	result = false
+	 		 	break
+	 		 end
+	 	end
+	 	count += 1
+	end
+	return result
 end
 
 #puts getHashIdsByConds("(姓名 = '123' or 电话='12345')")
