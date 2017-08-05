@@ -2,3 +2,4 @@
 /card_person_new.data
 .idea/
 !/.gitignore
+/*.data
